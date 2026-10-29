@@ -1,0 +1,17 @@
+spring:
+  cloud:
+    gateway:
+      mvc:
+        problem-details:
+          enabled: true
+        routes:
+          - id: user-service-route
+            uri: lb://user-service
+            predicates:
+              - Path=/api/v1/users/**
+            filters:
+              - TokenRelay=
+              - name: CircuitBreaker
+                args:
+                  name: userServiceCircuitBreaker
+                  fallbackUri: forward:/error
