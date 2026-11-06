@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход — SpringAppMarket</title>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem("theme");
+                if (theme !== "light" && theme !== "dark") {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                document.documentElement.setAttribute("data-theme", theme);
+            } catch (error) {
+                // localStorage can be unavailable in private contexts.
+            }
+        })();
+    </script>
+    <link rel="stylesheet" th:href="@{/auth.css}">
+</head>
+<body>
+<div class="auth-shell">
+    <header class="auth-topbar">
+        <a class="brand" href="/" aria-label="SpringAppMarket — на главную">
+            <span class="brand-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5.5 8.5h13l-1 11h-11l-1-11Z"/>
+                    <path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>
+                    <path d="M9.2 12.5h5.6"/>
+                </svg>
+            </span>
+            <span class="brand-name">SpringAppMarket</span>
+        </a>
+        <a class="home-link" href="/">На главную</a>
+    </header>
+
+    <main class="auth-card">
+        <div class="auth-heading">
+            <p class="eyebrow">Единый вход</p>
+            <h1>С возвращением</h1>
+            <p class="subtitle">Войдите, чтобы открыть закрытые разделы демо-маркетплейса.</p>
+        </div>
+
+        <div class="alert alert-success" th:if="${param.registered}">
+            Аккаунт создан. Войдите с новыми данными.
+        </div>
+        <div class="alert alert-error" th:if="${param.error}">
+            Неверное имя пользователя или пароль.
+        </div>
+        <div class="alert alert-info" th:if="${param.success}">
+            Вы уже вошли. <a href="/">Вернуться на главную</a>.
+        </div>
+
+        <form class="auth-form" th:action="@{/login}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <label class="field">
+                <span class="field-label">Имя пользователя</span>
+                <input class="field-input" type="text" name="username"
+                       autocomplete="username" autofocus required>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Пароль</span>
+                <input class="field-input" type="password" name="password"
+                       autocomplete="current-password" required>
+            </label>
+
+            <button class="button-primary" type="submit">Войти</button>
+        </form>
+
+        <div class="divider"><span>или</span></div>
+
+        <p class="auth-switch">
+            Нет аккаунта? <a th:href="@{/register}">Зарегистрироваться</a>
+        </p>
+    </main>
+
+    <p class="auth-footer">SpringAppMarket Demo · OAuth 2.1 · Gateway-only access</p>
+</div>
+</body>
+</html>

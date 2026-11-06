@@ -18,3 +18,9 @@ scrape_configs:
       - source_labels: [__meta_eureka_instance_id]
         target_label: instance
         action: replace
+      # user-service is served under /auth-server, so its actuator path differs.
+      - source_labels: [__meta_eureka_app_name]
+        regex: 'USER-SERVICE'
+        target_label: __metrics_path__
+        replacement: '/auth-server/actuator/prometheus'
+        action: replace

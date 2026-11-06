@@ -1,17 +1,137 @@
+server:
+  servlet:
+    session:
+      cookie:
+        # Keep the gateway session separate from the user-service session.
+        # Cookies are shared across ports on the same host, so the default
+        # JSESSIONID name would collide with user-service on localhost.
+        name: GATEWAY_SESSION
+
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          gateway-client-oidc:
+            provider: user-service
+            client-id: gateway-server
+            client-secret: ${GATEWAY_CLIENT_SECRET}
+            client-name: SpringAppMarket
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+        provider:
+          user-service:
+            # Internal issuer: the gateway talks to the auth server inside the
+            # Docker network. The browser only sees the gateway.
+            issuer-uri: ${AUTH_SERVER_ISSUER:http://localhost:8081/auth-server}
+            # Public authorization endpoint: the browser is redirected through
+            # the gateway, never directly to user-service. Keep this path
+            # relative so the redirect stays on whichever host the user opened
+            # (localhost or 127.0.0.1). An absolute URL here rewrites the host
+            # mid-flow and can break the browser session.
+            authorization-uri: ${AUTH_SERVER_AUTHORIZATION_URI:/auth-server/oauth2/authorize}
+            token-uri: ${AUTH_SERVER_URL:http://localhost:8081/auth-server}/oauth2/token
+            jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:8081/auth-server}/oauth2/jwks
+            user-info-uri: ${AUTH_SERVER_URL:http://localhost:8081/auth-server}/userinfo
+            user-name-attribute: sub
   cloud:
     gateway:
-      mvc:
-        problem-details:
-          enabled: true
-        routes:
-          - id: user-service-route
-            uri: lb://user-service
-            predicates:
-              - Path=/api/v1/users/**
-            filters:
-              - TokenRelay=
-              - name: CircuitBreaker
-                args:
-                  name: userServiceCircuitBreaker
-                  fallbackUri: forward:/error
+      server:
+        webmvc:
+          routes:
+            - id: grafana-route
+              uri: http://grafana:3000
+              predicates:
+                - Path=/grafana,/grafana/**
+              filters:
+                - StripPrefix=1
+                - PreserveHostHeader
+                - name: CircuitBreaker
+                  args:
+                    id: grafanaCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: user-service-api-route
+              uri: lb://user-service
+              predicates:
+                - Path=/api/v1/users/**
+              filters:
+                - TokenRelay=
+                # user-service now lives under /auth-server.
+                - PrefixPath=/auth-server
+                - name: CircuitBreaker
+                  args:
+                    id: userServiceCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: user-service-auth-route
+              uri: lb://user-service
+              predicates:
+                # Only browser-facing authorization-server endpoints are
+                # proxied. Business API and docs have their own routes.
+                - Path=/auth-server/oauth2/authorize,/auth-server/oauth2/consent,/auth-server/signin,/auth-server/register,/auth-server/auth.css,/auth-server/login,/auth-server/logout,/auth-server/connect/logout,/auth-server/error,/auth-server/settings,/auth-server/settings/**
+              filters:
+                # Keep the public gateway host in redirects and saved requests.
+                - PreserveHostHeader
+                - name: CircuitBreaker
+                  args:
+                    id: userServiceAuthCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: user-service-openapi-route
+              uri: lb://user-service
+              predicates:
+                - Path=/openapi/user-service
+              filters:
+                - SetPath=/auth-server/v3/api-docs
+                - name: CircuitBreaker
+                  args:
+                    id: userServiceOpenApiCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: app-service-api-route
+              uri: lb://app-service
+              predicates:
+                - Path=/api/v1/apps/**,/api/v1/categories/**
+              filters:
+                - TokenRelay=
+                - name: CircuitBreaker
+                  args:
+                    id: appServiceCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: app-service-openapi-route
+              uri: lb://app-service
+              predicates:
+                - Path=/openapi/app-service
+              filters:
+                - SetPath=/v3/api-docs
+                - name: CircuitBreaker
+                  args:
+                    id: appServiceOpenApiCircuitBreaker
+                    fallbackUri: forward:/error
+            - id: frontend-health-route
+              uri: http://frontend-app:3000
+              predicates:
+                - Path=/healthz
+              filters:
+                - SetPath=/api/health
+            - id: frontend-route
+              uri: http://frontend-app:3000
+              predicates:
+                # Only real frontend paths are proxied. A catch-all route would
+                # also swallow the gateway's own Swagger UI and OpenAPI docs.
+                - Path=/,/_next/**,/favicon.ico,/*.svg,/sw.js,/manifest.json,/robots.txt,/sitemap.xml,/admin,/admin/**,/catalog,/catalog/**,/apps/**,/developer,/developer/**
+              filters:
+                - PreserveHostHeader
+
+# The gateway hosts the only Swagger UI and aggregates service specs.
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    operationsSorter: alpha
+    tagsSorter: alpha
+    urls:
+      - name: user-service
+        url: /openapi/user-service
+      - name: app-service
+        url: /openapi/app-service

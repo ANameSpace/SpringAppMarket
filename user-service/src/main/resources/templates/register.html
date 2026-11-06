@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Регистрация — SpringAppMarket</title>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem("theme");
+                if (theme !== "light" && theme !== "dark") {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                document.documentElement.setAttribute("data-theme", theme);
+            } catch (error) {
+                // localStorage can be unavailable in private contexts.
+            }
+        })();
+    </script>
+    <link rel="stylesheet" th:href="@{/auth.css}">
+</head>
+<body>
+<div class="auth-shell">
+    <header class="auth-topbar">
+        <a class="brand" href="/" aria-label="SpringAppMarket — на главную">
+            <span class="brand-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5.5 8.5h13l-1 11h-11l-1-11Z"/>
+                    <path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>
+                    <path d="M9.2 12.5h5.6"/>
+                </svg>
+            </span>
+            <span class="brand-name">SpringAppMarket</span>
+        </a>
+        <a class="home-link" href="/">На главную</a>
+    </header>
+
+    <main class="auth-card">
+        <div class="auth-heading">
+            <p class="eyebrow">Новый аккаунт</p>
+            <h1>Создать профиль</h1>
+            <p class="subtitle">Регистрация занимает пару секунд. Аккаунт сразу готов к работе.</p>
+        </div>
+
+        <form class="auth-form" th:action="@{/register}" th:object="${form}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <label class="field">
+                <span class="field-label">Имя пользователя</span>
+                <input class="field-input" type="text" th:field="*{username}"
+                       autocomplete="username" autofocus>
+                <span class="field-hint">3–50 символов: латиница, цифры, точка, дефис, подчёркивание.</span>
+                <span class="field-error" th:if="${#fields.hasErrors('username')}"
+                      th:errors="*{username}"></span>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Email</span>
+                <input class="field-input" type="email" th:field="*{email}"
+                       autocomplete="email">
+                <span class="field-hint">Используется для входа в закрытые разделы и уведомлений.</span>
+                <span class="field-error" th:if="${#fields.hasErrors('email')}"
+                      th:errors="*{email}"></span>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Пароль</span>
+                <input class="field-input" type="password" name="password"
+                       autocomplete="new-password">
+                <span class="field-hint">Не менее 8 символов.</span>
+                <span class="field-error" th:if="${#fields.hasErrors('password')}"
+                      th:errors="*{password}"></span>
+            </label>
+
+            <label class="field">
+                <span class="field-label">Повторите пароль</span>
+                <input class="field-input" type="password" name="confirmPassword"
+                       autocomplete="new-password">
+                <span class="field-error" th:if="${#fields.hasErrors('confirmPassword')}"
+                      th:errors="*{confirmPassword}"></span>
+            </label>
+
+            <button class="button-primary" type="submit">Зарегистрироваться</button>
+        </form>
+
+        <div class="divider"><span>или</span></div>
+
+        <p class="auth-switch">
+            Уже есть аккаунт? <a th:href="@{/signin}">Войти</a>
+        </p>
+    </main>
+
+    <p class="auth-footer">SpringAppMarket Demo · OAuth 2.1 · Gateway-only access</p>
+</div>
+</body>
+</html>

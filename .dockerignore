@@ -1,0 +1,9 @@
+.git
+.idea
+*.iml
+.env
+.env.*
+**/target
+frontend-app
+infra
+cloud-config-repo

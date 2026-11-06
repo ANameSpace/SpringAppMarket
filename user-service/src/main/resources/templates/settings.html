@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Настройки — SpringAppMarket</title>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem("theme");
+                if (theme !== "light" && theme !== "dark") {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                document.documentElement.setAttribute("data-theme", theme);
+            } catch (error) {
+                // localStorage can be unavailable in private contexts.
+            }
+        })();
+    </script>
+    <link rel="stylesheet" th:href="@{/auth.css}">
+</head>
+<body>
+<div class="settings-shell">
+    <header class="auth-topbar">
+        <a class="brand" href="/" aria-label="SpringAppMarket — на главную">
+            <span class="brand-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5.5 8.5h13l-1 11h-11l-1-11Z"/>
+                    <path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>
+                    <path d="M9.2 12.5h5.6"/>
+                </svg>
+            </span>
+            <span class="brand-name">SpringAppMarket</span>
+        </a>
+        <div class="settings-actions">
+            <a class="home-link" href="/">На главную</a>
+            <form action="/logout" method="post">
+                <button class="link-button" type="submit">Выйти</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="settings-card">
+        <div class="settings-hero">
+            <span class="avatar-preview"
+                  th:style="'background:' + ${profile.avatarColor}"
+                  th:text="${#strings.substring(profile.username, 0, 1).toUpperCase()}"></span>
+            <div>
+                <p class="eyebrow">Настройки профиля</p>
+                <h1 th:text="${profile.displayName}">Пользователь</h1>
+                <p class="subtitle">
+                    <span th:text="${'@' + profile.username}">@username</span>
+                    <span th:if="${!#strings.isEmpty(profile.email)}"
+                          th:text="${' · ' + profile.email}"></span>
+                    <span th:text="${' · ' + profile.status}"></span>
+                </p>
+                <div class="role-row">
+                    <span class="role-chip" th:each="role : ${profile.roles}" th:text="${role}">USER</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+        <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+        <section class="settings-section">
+            <h2>Профиль</h2>
+            <p class="section-hint">Цвет аватара можно выбрать из палитры или задать вручную.</p>
+
+            <form class="auth-form" th:action="@{/settings/profile}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                <label class="field">
+                    <span class="field-label">Отображаемое имя</span>
+                    <input class="field-input" type="text" name="displayName" maxlength="100"
+                           th:value="${profile.displayName}" required>
+                    <span class="field-hint">От 1 до 100 символов.</span>
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Цвет аватара</span>
+                    <input class="field-input field-color" id="avatarColor" type="color"
+                           name="avatarColor" th:value="${profile.avatarColor}">
+                    <span class="field-hint">Любой HEX-цвет, например #10B981.</span>
+                </label>
+
+                <div class="palette" aria-label="Палитра цветов">
+                    <button type="button" class="palette-swatch" th:each="color : ${palette}"
+                            th:style="'background:' + ${color}"
+                            th:data-color="${color}"
+                            th:title="${color}"
+                            th:attr="aria-label=${color}"></button>
+                </div>
+
+                <button class="button-primary" type="submit">Сохранить профиль</button>
+            </form>
+        </section>
+
+        <section class="settings-section">
+            <h2>Email</h2>
+            <p class="section-hint">Email должен быть уникальным. Пароль для смены не требуется.</p>
+
+            <form class="auth-form" th:action="@{/settings/email}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <label class="field">
+                    <span class="field-label">Новый email</span>
+                    <input class="field-input" type="email" name="email" maxlength="255"
+                           th:value="${profile.email}" required>
+                </label>
+                <button class="button-primary" type="submit">Изменить email</button>
+            </form>
+        </section>
+
+        <section class="settings-section">
+            <h2>Пароль</h2>
+            <p class="section-hint">Новый пароль должен содержать не менее 8 символов.</p>
+
+            <form class="auth-form" th:action="@{/settings/password}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <label class="field">
+                    <span class="field-label">Текущий пароль</span>
+                    <input class="field-input" type="password" name="currentPassword"
+                           autocomplete="current-password" required>
+                </label>
+                <label class="field">
+                    <span class="field-label">Новый пароль</span>
+                    <input class="field-input" type="password" name="newPassword"
+                           autocomplete="new-password" minlength="8" maxlength="100" required>
+                </label>
+                <button class="button-primary" type="submit">Изменить пароль</button>
+            </form>
+        </section>
+
+        <section class="settings-section">
+            <h2>Роли</h2>
+            <p class="section-hint">
+                Роль USER есть у всех. DEVELOPER открывает разделы для разработчиков.
+                ADMIN назначается только вручную в базе данных.
+            </p>
+
+            <div class="role-panel">
+                <div>
+                    <p class="role-panel-title">Статус разработчика</p>
+                    <p class="role-panel-text" th:if="${profile.roles.contains('DEVELOPER')}">
+                        Роль DEVELOPER уже выдана.
+                    </p>
+                    <p class="role-panel-text" th:unless="${profile.roles.contains('DEVELOPER')}">
+                        Получите роль DEVELOPER одним нажатием. Это идемпотентная операция.
+                    </p>
+                </div>
+
+                <form th:action="@{/settings/become-developer}" method="post"
+                      th:if="${!profile.roles.contains('DEVELOPER') and !profile.roles.contains('ADMIN')}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button class="button-secondary" type="submit">Стать разработчиком</button>
+                </form>
+
+                <span class="role-chip" th:if="${profile.roles.contains('ADMIN')}">ADMIN</span>
+            </div>
+        </section>
+    </main>
+
+    <p class="auth-footer">SpringAppMarket Demo · OAuth 2.1 · Gateway-only access</p>
+</div>
+
+<script>
+    (function () {
+        var input = document.getElementById("avatarColor");
+        if (!input) {
+            return;
+        }
+        document.querySelectorAll(".palette-swatch").forEach(function (swatch) {
+            swatch.addEventListener("click", function () {
+                input.value = swatch.getAttribute("data-color");
+            });
+        });
+    })();
+</script>
+</body>
+</html>

@@ -19,6 +19,9 @@
         <module>cloud-config-server</module>
         <module>gateway-server</module>
         <module>user-service</module>
+        <module>app-service</module>
+        <module>review-service</module>
+        <module>order-service</module>
     </modules>
 
     <properties>

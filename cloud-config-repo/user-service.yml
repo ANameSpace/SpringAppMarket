@@ -1,8 +1,20 @@
+server:
+  servlet:
+    # The gateway is the only public entry point. All user-service endpoints,
+    # including the authorization server, live under this context path.
+    context-path: /auth-server
+    session:
+      cookie:
+        # Keep the user-service session separate from the gateway session.
+        # Cookies are shared across ports on the same host, so the default
+        # JSESSIONID name would collide with the gateway on localhost.
+        name: USER_SERVICE_SESSION
+
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/user_db}
     username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -13,14 +25,18 @@ spring:
       hibernate:
         format_sql: true
 
+  flyway:
+    enabled: true
+    # The stack historically used Hibernate ddl-auto. Baseline an existing
+    # schema at version 0 so the idempotent profile migration still runs.
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+
 springdoc:
   api-docs:
-    path: /v3/api-doc
+    path: /v3/api-docs
+  # Swagger UI is hosted by the gateway only. Keep the OpenAPI document
+  # available for the gateway to aggregate.
   swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: alpha
-    tagsSorter: alpha
-
-
-
-  настрой бд
+    enabled: false

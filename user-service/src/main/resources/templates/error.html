@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Ошибка ' + ${status} + ' — SpringAppMarket'">Ошибка — SpringAppMarket</title>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem("theme");
+                if (theme !== "light" && theme !== "dark") {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                }
+                document.documentElement.setAttribute("data-theme", theme);
+            } catch (error) {
+                // localStorage can be unavailable in private contexts.
+            }
+        })();
+    </script>
+    <link rel="stylesheet" th:href="@{/auth.css}">
+</head>
+<body>
+<div class="auth-shell">
+    <header class="auth-topbar">
+        <a class="brand" href="/" aria-label="SpringAppMarket — на главную">
+            <span class="brand-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5.5 8.5h13l-1 11h-11l-1-11Z"/>
+                    <path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>
+                    <path d="M9.2 12.5h5.6"/>
+                </svg>
+            </span>
+            <span class="brand-name">SpringAppMarket</span>
+        </a>
+        <a class="home-link" href="/">На главную</a>
+    </header>
+
+    <main class="auth-card">
+        <div class="auth-heading">
+            <p class="eyebrow">Ошибка <span th:text="${status}">400</span></p>
+            <h1 th:text="${title}">Некорректный запрос</h1>
+            <p class="subtitle" th:text="${message}">
+                Ссылка авторизации устарела или содержит неверные параметры.
+            </p>
+        </div>
+
+        <p class="auth-switch" th:if="${path != null}">
+            Запрошенный адрес: <code th:text="${path}">/auth-server/error</code>
+        </p>
+
+        <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1.5rem;">
+            <a class="button-primary" href="/" style="text-decoration:none;">На главную</a>
+            <a class="button-primary" href="/catalog" style="text-decoration:none;">В каталог</a>
+        </div>
+    </main>
+
+    <p class="auth-footer">SpringAppMarket Demo — OAuth 2.1 — Gateway-only access</p>
+</div>
+</body>
+</html>
